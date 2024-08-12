@@ -41,27 +41,46 @@ toc: false
 <div>${chart()}</div>
 
 ```js
+
+// Prevent default page zoom on Ctrl + scroll and pinch gestures
+document.addEventListener('wheel', function(event) {
+  if (event.ctrlKey) {
+    event.preventDefault();
+  }
+}, { passive: false });
+
+document.addEventListener('gesturestart', function(event) {
+  event.preventDefault();
+});
+
 function chart() {
   const width = 640;
   const height = 640;
   const marginTop = 20;
-  const marginRight = 150; // Increased margin to accommodate legend
+  const marginRight = 150;
   const marginBottom = 30;
   const marginLeft = 40;
   const defaultRadius = 0.8;
 
-  // Zoom configuration
-  const maxZoom = 10; // Maximum zoom
-  const dotScale = 3; // How much dots expand as the user zooms in
+  const maxZoom = 10;
+  const dotScale = 0.3;
 
-  // Create the SVG container.
-  const svg = d3.create("svg")
-    .attr("viewBox", [0, 0, width, height])
+  // Set up the canvas
+  const canvas = d3.select("body").append("canvas")
+    .attr("width", width)
+    .attr("height", height)
     .style("max-width", "100%")
     .style("height", "auto")
-    .property("value", []);
+    .node();
+
+  const context = canvas.getContext("2d");
 
   FileAttachment("cell-annotations.csv").csv().then(data => {
+    if (!data || data.length === 0) {
+      console.error("Data not loaded correctly or empty.");
+      return;
+    }
+
     const xExtent = d3.extent(data, d => +d["sdimx"]);
     const yExtent = d3.extent(data, d => +d["sdimy"]);
 
@@ -75,137 +94,103 @@ function chart() {
       .domain(yExtent)
       .range([height, 0]);
 
-    // Define the mapping between categories and their corresponding sprite images
-    const spriteMapping = {
-      "B": "http://localhost:3000/images/b-cell.png", //level 1
-      "CAF": "http://localhost:3000/images/caf.png", //level 2
-      "Cancer": "http://localhost:3000/images/cancer.png", //level 1 and 3
-      "cDC2": "http://localhost:3000/images/dc.png", //level 2
-      "macrophages": "http://localhost:3000/images/mac.png", //level 3
-      "Monocytes": "http://localhost:3000/images/mono.png", //level 2
-      "NK": "http://localhost:3000/images/nk.png", // level 2 and 3
-      "T": "http://localhost:3000/images/tcell.png", // level 1
-      // Add more categories and their corresponding sprite images
-    };
-
     const color = d3.scaleOrdinal()
       .domain(data.map(d => d["cell_labels_level1"]))
       .range(d3.schemeCategory10);
 
-    // Append the dots.
-    const dots = svg.append("g")
-      .attr("clip-path", "url(#clip)")
-      .selectAll("circle")
-      .data(data)
-      .join("circle")
-      .attr("fill", d => color(d["cell_labels_level1"]))
-      .attr("transform", d => `translate(${x(d["sdimx"])},${y(d["sdimy"])})`)
-      .attr("r", defaultRadius)
-      .on("mouseover", function (event, d) {
-        d3.select(this).attr("r", 4).attr("stroke", "black");
-        tooltip.transition()
-          .duration(200)
-          .style("opacity", .9);
-        tooltip.html(`Label: ${d.cell_labels_level1}<br/>X: ${d.sdimx}<br/>Y: ${d.sdimy}`)
-          .style("left", (event.pageX + 5) + "px")
-          .style("top", (event.pageY - 28) + "px");
-      })
-      .on("mouseout", function (d) {
-        d3.select(this).attr("r", defaultRadius).attr("stroke", null);
-        tooltip.transition()
-          .duration(500)
-          .style("opacity", 0);
+    const spriteMapping = {
+      "B": "http://localhost:3000/images/b-cell.png",
+      "CAF": "http://localhost:3000/images/caf.png",
+      "Cancer": "http://localhost:3000/images/cancer.png",
+      "cDC2": "http://localhost:3000/images/dc.png",
+      "macrophages": "http://localhost:3000/images/mac.png",
+      "Monocytes": "http://localhost:3000/images/mono.png",
+      "NK": "http://localhost:3000/images/nk.png",
+      "T": "http://localhost:3000/images/tcell.png",
+    };
+
+    const spriteImages = {};
+    const loadImages = Object.entries(spriteMapping).map(([label, url]) => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => {
+          spriteImages[label] = img;
+          resolve();
+        };
+        img.onerror = () => {
+          console.error(`Failed to load image for ${label} from ${url}`);
+          reject();
+        };
       });
+    });
 
-    // Create tooltip div
-    const tooltip = d3.select("body").append("div")
-      .attr("class", "tooltip");
+    Promise.all(loadImages).then(() => {
+      function render(transform) {
 
-    // Append the axes.
-    const xAxis = svg.append("g")
-      .attr("transform", `translate(0,${height - marginBottom})`)
-      .attr("class", "axis")
-      .call(d3.axisBottom(x))
-      .call(g => g.select(".domain").remove())
-      .call(g => g.append("text")
-        .attr("x", width - marginRight)
-        .attr("y", -4)
-        .attr("fill", "#fff")
-        .attr("font-weight", "bold")
-        .attr("text-anchor", "end")
-        .text("x"));
+        //console.log("transform.k: " + transform.k);
+        context.clearRect(0, 0, width, height);
+        context.save();
+        context.translate(transform.x, transform.y);
+        context.scale(transform.k, transform.k);
 
-    const yAxis = svg.append("g")
-      .attr("transform", `translate(${marginLeft},0)`)
-      .attr("class", "axis")
-      .call(d3.axisLeft(y))
-      .call(g => g.select(".domain").remove())
-      .call(g => g.select(".tick:last-of-type text").clone()
-        .attr("x", 4)
-        .attr("text-anchor", "start")
-        .attr("font-weight", "bold")
-        .attr("fill", "#fff")
-        .text("y"));
+        const radius = defaultRadius + (dotScale * (transform.k - 1) / (maxZoom - 1))
+        //console.log("radius: " + radius);
 
-    // Create legend items
-    const legend = svg.selectAll(".legend")
-      .data(color.domain())
-      .enter().append("g")
-      .attr("class", "legend")
-      .attr("transform", (d, i) => `translate(${width - marginRight + 20}, ${i * 20 + marginTop})`);
+        if (transform.k > 8) {
+          data.forEach(d => {
+            const img = spriteImages[d["cell_labels_level1"]];
+            if (img) {
+              context.drawImage(img, x(d["sdimx"]) - (radius), y(d["sdimy"]) - (radius), radius*2, radius*2);
+            }
+          });
+        } else {
+          data.forEach(d => {
+            context.beginPath();
+            context.arc(x(d["sdimx"]), y(d["sdimy"]), radius, 0, 2 * Math.PI);
+            context.fillStyle = color(d["cell_labels_level1"]);
+            context.fill();
+          });
+        }
 
-    // Append rectangles for the color boxes
-    legend.append("rect")
-      .attr("width", 18)
-      .attr("height", 18)
-      .style("fill", d => color(d));
+        context.restore();
 
-    // Append text labels
-    legend.append("text")
-      .attr("x", 24)
-      .attr("y", 9)
-      .attr("dy", ".35em")
-      .text(d => d);
-
-    // Zoom behavior
-    const zoom = d3.zoom()
-      .scaleExtent([1, maxZoom])
-      .translateExtent([[0, 0], [width, height]])
-      .extent([[0, 0], [width, height]])
-      .on("zoom", zoomed);
-
-    svg.call(zoom);
-
-    function zoomed(event) {
-      const transform = event.transform;
-      const newX = transform.rescaleX(x);
-      const newY = transform.rescaleY(y);
-      xAxis.call(d3.axisBottom(newX));
-      yAxis.call(d3.axisLeft(newY));
-
-      dots.attr("transform", d => `translate(${newX(d["sdimx"])},${newY(d["sdimy"])})`);
-
-      if (transform.k > 8) {
-        dots.attr("r", 0); // Hide dots
-        const sprites = svg.selectAll(".sprite")
-          .data(data);
-
-        sprites.enter().append("image")
-          .attr("class", "sprite")
-          .attr("xlink:href", d => spriteMapping[d["cell_labels_level1"]]) // Use the sprite mapping
-          .attr("width", 10)
-          .attr("height", 10)
-          .attr("transform", d => `translate(${newX(d["sdimx"]) - 5},${newY(d["sdimy"]) - 5})`)
-          .merge(sprites)
-          .attr("transform", d => `translate(${newX(d["sdimx"]) - 5},${newY(d["sdimy"]) - 5})`);
-
-        sprites.exit().remove();
-      } else {
-        dots.attr("r", defaultRadius + (dotScale * (transform.k - 1) / (maxZoom - 1))); // Adjust the radius based on the zoom level
-        svg.selectAll(".sprite").remove(); // Remove sprites
+        drawAxes(context, x, y);
+        drawLegend(context, color, width, marginTop, marginRight);
       }
-    }
+
+      function drawAxes(context, x, y) {
+        // Axes drawing logic should be implemented here.
+        // Simplified: use a library or custom implementation for axis drawing.
+      }
+
+      function drawLegend(context, color, width, marginTop, marginRight) {
+        const legendData = color.domain();
+        legendData.forEach((d, i) => {
+          context.fillStyle = color(d);
+          context.fillRect(width - marginRight + 20, marginTop + i * 20, 18, 18);
+          context.fillStyle = "#FFF";
+          context.fillText(d, width - marginRight + 44, marginTop + i * 20 + 14);
+        });
+      }
+
+      render(d3.zoomIdentity);
+
+      d3.select(canvas)
+        .call(d3.zoom()
+          .scaleExtent([1, maxZoom])
+          .translateExtent([[0, 0], [width, height]])
+          .extent([[0, 0], [width, height]])
+          .on("zoom", event => render(event.transform))
+        );
+    }).catch(error => {
+      console.error("Error loading images:", error);
+    });
+  }).catch(error => {
+    console.error("Error loading data:", error);
   });
 
-  return svg.node();
+  return canvas;
 }
+
+
