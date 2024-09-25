@@ -113,26 +113,27 @@ function loadSprites() {
   return { spriteImages, loadImages };
 }
 
-function renderChart(context, data, x, y, color, spriteImages, defaultRadius, dotScale, maxZoom, width, height, marginTop, marginRight) {
+function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight) {
   function render(transform) {
     context.clearRect(0, 0, width, height);
     context.save();
     context.translate(transform.x, transform.y);
     context.scale(transform.k, transform.k);
 
-    const radius = defaultRadius + (dotScale * (transform.k - 1) / (maxZoom - 1));
+    const dotRadius = defaultDotRadius + (dotScale * (transform.k - 1) / (maxZoom - 1));
+    const imageRadius = defaultImageRadius + (imageScale * (transform.k - 1) / (maxZoom - 1));
 
     if (transform.k > 8) {
       data.forEach(d => {
         const img = spriteImages[d["cell_labels_level1"]];
         if (img) {
-          context.drawImage(img, x(d["sdimx"]) - (radius), y(d["sdimy"]) - (radius), radius * 2, radius * 2);
+          context.drawImage(img, x(d["sdimx"]) - (imageRadius), y(d["sdimy"]) - (imageRadius), imageRadius * 2, imageRadius * 2);
         }
       });
     } else {
       data.forEach(d => {
         context.beginPath();
-        context.arc(x(d["sdimx"]), y(d["sdimy"]), radius, 0, 2 * Math.PI);
+        context.arc(x(d["sdimx"]), y(d["sdimy"]), dotRadius, 0, 2 * Math.PI);
         context.fillStyle = color(d["cell_labels_level1"]);
         context.fill();
       });
@@ -171,9 +172,13 @@ function drawLegend(context, color, width, marginTop, marginRight) {
 
 function chart() {
   // Configurable parameters
-  const defaultRadius = 0.8;
-  const maxZoom = 10;
+  const defaultDotRadius = 0.8;
   const dotScale = 0.3;
+
+  const defaultImageRadius = 1.2;
+  const imageScale = 0.3;
+
+  const maxZoom = 40;
 
   // Parameters
   const width = window.innerWidth;
@@ -200,7 +205,7 @@ function chart() {
     const { spriteImages, loadImages } = loadSprites();
 
     Promise.all(loadImages).then(() => {
-      renderChart(context, data, x, y, color, spriteImages, defaultRadius, dotScale, maxZoom, width, height, marginTop, marginRight);
+      renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight);
     }).catch(error => {
       console.error("Error loading images:", error);
     });
