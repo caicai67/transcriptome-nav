@@ -53,7 +53,7 @@ A typical Framework project looks like this:
 | `npm run observable` | Run commands like `observable help`                      |
 
 
-# References: 
+# References
 The source data currently used for this project is from the CosMx SMI
 NSCLC FFPE Dataset: 
 https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nsclc-ffpe-dataset/
