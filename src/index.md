@@ -4,6 +4,10 @@ title: Navigation Prototype
 toc: false
 ---
 
+<!-- The source data currently used for this project is from the CosMx SMI
+NSCLC FFPE Dataset: 
+https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nsclc-ffpe-dataset/ -->
+
 <style>
 .legend {
   font-family: var(--sans-serif);
