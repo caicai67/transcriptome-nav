@@ -88,14 +88,23 @@ function createScales(data, width, height) {
 
 function loadSprites() {
   const spriteMapping = {
-    "B": "http://localhost:3000/images/b-cell.png",
-    "CAF": "http://localhost:3000/images/caf.png",
+    "plasma": "http://localhost:3000/images/b-cell.png",
+    "B.naive": "http://localhost:3000/images/b-cell.png",
+    "fibroblasts": "http://localhost:3000/images/caf.png",
     "Cancer": "http://localhost:3000/images/cancer.png",
-    "cDC2": "http://localhost:3000/images/dc.png",
+    "pDCs": "http://localhost:3000/images/dc.png",
+    "mDCs": "http://localhost:3000/images/dc.png",
     "macrophages": "http://localhost:3000/images/mac.png",
-    "Monocytes": "http://localhost:3000/images/mono.png",
-    "NK": "http://localhost:3000/images/nk.png",
-    "T": "http://localhost:3000/images/tcell.png",
+    "monocytes.NC.I": "http://localhost:3000/images/mono.png",
+    "monocytes.NC.I": "http://localhost:3000/images/mono.png",
+    "mast": "http://localhost:3000/images/mono.png",
+    "NK": "http://localhost:3000/images/tcell.png",
+    "T.CD8.naive": "http://localhost:3000/images/tcell.png",
+    "T.CD4.memory": "http://localhost:3000/images/tcell.png",
+    "T.CD4.naive": "http://localhost:3000/images/tcell.png",
+    "Treg": "http://localhost:3000/images/tcell.png",
+    "endothelial.cells": "http://localhost:3000/images/no-mapping.png",
+    "B.memory": "http://localhost:3000/images/b-cell.png",
   };
 
   const spriteImages = {};
@@ -129,7 +138,7 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
 
     if (transform.k > 8) {
       data.forEach(d => {
-        const img = spriteImages[d["cell_labels_level1"]];
+        const img = spriteImages[d["immune_cell_labels"]];
         if (img) {
           context.drawImage(img, x(d["sdimx"]) - (imageRadius), y(d["sdimy"]) - (imageRadius), imageRadius * 2, imageRadius * 2);
         }
@@ -138,7 +147,7 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
       data.forEach(d => {
         context.beginPath();
         context.arc(x(d["sdimx"]), y(d["sdimy"]), dotRadius, 0, 2 * Math.PI);
-        context.fillStyle = color(d["cell_labels_level1"]);
+        context.fillStyle = color(d["immune_cell_labels"]);
         context.fill();
       });
     }
