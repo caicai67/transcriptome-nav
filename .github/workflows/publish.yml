@@ -14,9 +14,8 @@ jobs:
 
       - name: Copy src to docs
         run: |
-          mkdir -p docs
+          mkdir docs
           cp -r dist/* docs/  # Adjust this line to match your build folder name
-          ls docs  # List files in docs for debugging
 
       - name: Commit and push changes
         run: |
