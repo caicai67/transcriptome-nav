@@ -18,6 +18,9 @@ jobs:
           mkdir docs
           cp -r dist/* docs/  # Adjust this line to match your build folder name
 
+      - name: Create .nojekyll file
+        run: echo > docs/.nojekyll
+
       - name: Commit and push changes
         run: |
           git config --local user.email "action@github.com"
