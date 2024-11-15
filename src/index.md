@@ -87,24 +87,27 @@ function createScales(data, width, height) {
 }
 
 function loadSprites() {
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const imagePath = isLocal ? 'http://localhost:3000/images/' : './images/';  // Modify this path for GitHub Pages deployment
+
   const spriteMapping = {
-    "plasma": "http://localhost:3000/images/b-cell.png",
-    "B.naive": "http://localhost:3000/images/b-cell.png",
-    "fibroblasts": "http://localhost:3000/images/caf.png",
-    "Cancer": "http://localhost:3000/images/cancer.png",
-    "pDCs": "http://localhost:3000/images/dc.png",
-    "mDCs": "http://localhost:3000/images/dc.png",
-    "macrophages": "http://localhost:3000/images/mac.png",
-    "monocytes.NC.I": "http://localhost:3000/images/mono.png",
-    "monocytes.NC.I": "http://localhost:3000/images/mono.png",
-    "mast": "http://localhost:3000/images/mono.png",
-    "NK": "http://localhost:3000/images/tcell.png",
-    "T.CD8.naive": "http://localhost:3000/images/tcell.png",
-    "T.CD4.memory": "http://localhost:3000/images/tcell.png",
-    "T.CD4.naive": "http://localhost:3000/images/tcell.png",
-    "Treg": "http://localhost:3000/images/tcell.png",
-    "endothelial.cells": "http://localhost:3000/images/no-mapping.png",
-    "B.memory": "http://localhost:3000/images/b-cell.png",
+    "plasma": imagePath + "b-cell.png",
+    "B.naive": imagePath + "b-cell.png",
+    "fibroblasts": imagePath + "caf.png",
+    "Cancer": imagePath + "cancer.png",
+    "pDCs": imagePath + "dc.png",
+    "mDCs": imagePath + "dc.png",
+    "macrophages": imagePath + "mac.png",
+    "monocytes.NC.I": imagePath + "mono.png",
+    "monocytes.NC.I": imagePath + "mono.png",
+    "mast": imagePath + "mono.png",
+    "NK": imagePath + "tcell.png",
+    "T.CD8.naive": imagePath + "tcell.png",
+    "T.CD4.memory": imagePath + "tcell.png",
+    "T.CD4.naive": imagePath + "tcell.png",
+    "Treg": imagePath + "tcell.png",
+    "endothelial.cells": imagePath + "no-mapping.png",
+    "B.memory": imagePath + "b-cell.png",
   };
 
   const spriteImages = {};
