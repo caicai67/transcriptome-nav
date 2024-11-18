@@ -109,6 +109,7 @@ function loadSprites() {
     "endothelial.cells": imagePath + "no-mapping.png",
     "B.memory": imagePath + "b-cell.png",
   };
+  
 
   const spriteImages = {};
   const loadImages = Object.entries(spriteMapping).map(([label, url]) => {
