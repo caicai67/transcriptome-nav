@@ -91,6 +91,7 @@ function loadSprites() {
   const imagePath = isLocal ? 'http://localhost:3000/images/' : './images/';  // Modify this path for GitHub Pages deployment
 
   const spriteMapping = {
+    "neutrophils": imagePath + "neutro.png",
     "plasma": imagePath + "b-cell.png",
     "B.naive": imagePath + "b-cell.png",
     "fibroblasts": imagePath + "caf.png",
@@ -98,15 +99,16 @@ function loadSprites() {
     "pDCs": imagePath + "dc.png",
     "mDCs": imagePath + "dc.png",
     "macrophages": imagePath + "mac.png",
-    "monocytes.NC.I": imagePath + "mono.png",
-    "monocytes.NC.I": imagePath + "mono.png",
-    "mast": imagePath + "mono.png",
-    "NK": imagePath + "tcell.png",
-    "T.CD8.naive": imagePath + "tcell.png",
-    "T.CD4.memory": imagePath + "tcell.png",
-    "T.CD4.naive": imagePath + "tcell.png",
-    "Treg": imagePath + "tcell.png",
-    "endothelial.cells": imagePath + "no-mapping.png",
+    "monocytes.NC.I": imagePath + "mac.png",
+    "monocytes.NC.I": imagePath + "mac.png",
+    "mast": imagePath + "mast.png",
+    "NK": imagePath + "nk.png",
+    "T.CD8.memory": imagePath + "cd8.png",
+    "T.CD8.naive": imagePath + "cd8.png",
+    "T.CD4.memory": imagePath + "cd4.png",
+    "T.CD4.naive": imagePath + "cd4.png",
+    "Treg": imagePath + "cd4.png",
+    "endothelial.cells": imagePath + "endo.png",
     "B.memory": imagePath + "b-cell.png",
   };
 
@@ -130,46 +132,59 @@ function loadSprites() {
 }
 
 function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight) {
-  function render(transform) {
-    context.clearRect(0, 0, width, height);
-    context.save();
-    context.translate(transform.x, transform.y);
-    context.scale(transform.k, transform.k);
+    const spriteZoomLevel = 8; // Define the zoom level at which sprites replace dots
 
-    const dotRadius = defaultDotRadius + (dotScale * (transform.k - 1) / (maxZoom - 1));
-    const imageRadius = defaultImageRadius + (imageScale * (transform.k - 1) / (maxZoom - 1));
+    function render(transform) {
+        context.clearRect(0, 0, width, height);
+        context.save();
+        context.translate(transform.x, transform.y);
+        context.scale(transform.k, transform.k);
 
-    if (transform.k > 8) {
-      data.forEach(d => {
-        const img = spriteImages[d["immune_cell_labels"]];
-        if (img) {
-          context.drawImage(img, x(d["sdimx"]) - (imageRadius), y(d["sdimy"]) - (imageRadius), imageRadius * 2, imageRadius * 2);
+        const zoomFactor = transform.k; // Current zoom level
+
+        // Calculate the dot radius based on zoom level
+        let dotRadius;
+        if (zoomFactor < spriteZoomLevel) {
+            dotRadius = defaultDotRadius * (1.5 - (0.5 * (zoomFactor - 1) / (spriteZoomLevel - 1)));
+        } else {
+            dotRadius = defaultDotRadius; // At spriteZoomLevel or beyond, use default size
         }
-      });
-    } else {
-      data.forEach(d => {
-        context.beginPath();
-        context.arc(x(d["sdimx"]), y(d["sdimy"]), dotRadius, 0, 2 * Math.PI);
-        context.fillStyle = color(d["immune_cell_labels"]);
-        context.fill();
-      });
+
+        // Calculate image radius for sprites
+        const imageRadius = defaultImageRadius + (imageScale * (zoomFactor - spriteZoomLevel) / (maxZoom - spriteZoomLevel));
+
+        // Render points or sprites based on zoom level
+        if (zoomFactor >= spriteZoomLevel) {
+            data.forEach(d => {
+                const img = spriteImages[d["immune_cell_labels"]];
+                if (img) {
+                    context.drawImage(img, x(d["sdimx"]) - imageRadius, y(d["sdimy"]) - imageRadius, imageRadius * 2, imageRadius * 2);
+                }
+            });
+        } else {
+            data.forEach(d => {
+                context.beginPath();
+                context.arc(x(d["sdimx"]), y(d["sdimy"]), dotRadius, 0, 2 * Math.PI);
+                context.fillStyle = color(d["immune_cell_labels"]);
+                context.fill();
+            });
+        }
+
+        context.restore();
+
+        drawAxes(context, x, y);
+        drawLegend(context, color, width, marginTop, marginRight);
     }
 
-    context.restore();
+    render(d3.zoomIdentity);
 
-    drawAxes(context, x, y);
-    drawLegend(context, color, width, marginTop, marginRight);
-  }
-
-  render(d3.zoomIdentity);
-
-  d3.select(context.canvas)
-    .call(d3.zoom()
-      .scaleExtent([1, maxZoom])
-      .translateExtent([[0, 0], [width, height]])
-      .extent([[0, 0], [width, height]])
-      .on("zoom", event => render(event.transform))
-    );
+    d3.select(context.canvas)
+        .call(d3.zoom()
+            .scaleExtent([1, maxZoom])
+            .translateExtent([[0, 0], [width, height]])
+            .extent([[0, 0], [width, height]])
+            .on("zoom", event => render(event.transform))
+        );
 }
 
 function drawAxes(context, x, y) {
@@ -177,14 +192,38 @@ function drawAxes(context, x, y) {
 }
 
 function drawLegend(context, color, width, marginTop, marginRight) {
-  const legendData = color.domain();
-  legendData.forEach((d, i) => {
-    context.fillStyle = color(d);
-    context.fillRect(width - marginRight + 20, marginTop + i * 20, 18, 18);
-    context.fillStyle = "#FFF";
-    context.fillText(d, width - marginRight + 44, marginTop + i * 20 + 14);
-  });
+    let legendData = color.domain(); // Get the unique labels from the color domain
+
+    // Sort the legend items by color to group similar colors together
+    legendData = legendData.sort((a, b) => d3.ascending(color(a), color(b)));
+
+    // Adjust the position and dimensions of the legend
+    const legendWidth = 150; // Adjust to fit your text
+    const legendHeight = legendData.length * 24 + 10; // Add spacing for all rows
+    const legendX = width - marginRight + 50; // Move further to the right
+    const legendY = marginTop - 10;
+
+    // Draw the white background for the entire legend
+    context.fillStyle = "#FFFFFF"; // White background
+    context.fillRect(legendX, legendY, legendWidth, legendHeight);
+
+    // Set font style for the legend text
+    context.font = "bold 14px sans-serif";
+    context.textBaseline = "middle";
+
+    // Loop through the legend data to render each text item
+    legendData.forEach((d, i) => {
+        const textX = legendX + 10; // Padding inside the legend
+        const textY = marginTop + i * 24 + 5;
+
+        // Draw the text in the corresponding color
+        context.fillStyle = color(d); // Match text color to legend color
+        context.fillText(d, textX, textY);
+    });
 }
+
+
+
 
 function chart() {
   // Configurable parameters
@@ -214,9 +253,13 @@ function chart() {
     }
 
     const { x, y } = createScales(data, width, height);
-    const color = d3.scaleOrdinal()
-      .domain(data.map(d => d["cell_labels_level1"]))
-      .range(d3.schemeCategory10);
+
+
+const color = d3.scaleOrdinal()
+    .domain(["B.memory", "B.naive", "Cancer", "endothelial.cells", "fibroblasts", "macrophages", "mast", "mDCs", "monocytes.C", "monocytes.NC.I", "neutrophils", "NK", "pDCs", "plasma", "T.CD4.memory", "T.CD4.naive", "T.CD8.memory", "T.CD8.naive", "Treg"])
+    .range(["#5755fe", "#5755fe", "#dbb295", "#6a7a8a", "#181818", "#44af5f", "#fbad27", "#d2d429", "#44af5f", "#44af5f", "#44af5f", "#f6a9ed", "#d2d429", "#5755fe", "#e53902", "#e53902", "#2ed7d5", "#2ed7d5", "#e53902"]);
+
+
 
     const { spriteImages, loadImages } = loadSprites();
 
