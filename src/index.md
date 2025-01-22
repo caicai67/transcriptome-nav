@@ -110,6 +110,8 @@ function loadSprites() {
     "Treg": imagePath + "cd4.png",
     "endothelial.cells": imagePath + "endo.png",
     "B.memory": imagePath + "b-cell.png",
+
+    "stainImg": imagePath + "small-Lung5-3_image2.png",
   };
 
   const spriteImages = {};
@@ -147,7 +149,7 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         if (zoomFactor < spriteZoomLevel) {
             dotRadius = defaultDotRadius * (1.5 - (0.5 * (zoomFactor - 1) / (spriteZoomLevel - 1)));
         } else {
-            dotRadius = defaultDotRadius; // At spriteZoomLevel or beyond, use default size
+            dotRadius = defaultDotRadius; // for images, use default size
         }
 
         // Calculate image radius for sprites
@@ -169,11 +171,20 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
                 context.fill();
             });
         }
-
         context.restore();
 
+        context.save();
+        context.translate(transform.x, transform.y);
+        context.scale(transform.k, transform.k);
+        context.globalAlpha = 0.4;
+        context.drawImage(spriteImages["stainImg"], 0, 0, );
+        context.restore();
+
+        context.save();
         drawAxes(context, x, y);
         drawLegend(context, color, width, marginTop, marginRight);
+
+        context.restore();
     }
 
     render(d3.zoomIdentity);
@@ -222,9 +233,6 @@ function drawLegend(context, color, width, marginTop, marginRight) {
     });
 }
 
-
-
-
 function chart() {
   // Configurable parameters
   const defaultDotRadius = 0.8;
@@ -254,12 +262,9 @@ function chart() {
 
     const { x, y } = createScales(data, width, height);
 
-
-const color = d3.scaleOrdinal()
+    const color = d3.scaleOrdinal()
     .domain(["B.memory", "B.naive", "Cancer", "endothelial.cells", "fibroblasts", "macrophages", "mast", "mDCs", "monocytes.C", "monocytes.NC.I", "neutrophils", "NK", "pDCs", "plasma", "T.CD4.memory", "T.CD4.naive", "T.CD8.memory", "T.CD8.naive", "Treg"])
     .range(["#5755fe", "#5755fe", "#dbb295", "#6a7a8a", "#181818", "#44af5f", "#fbad27", "#d2d429", "#44af5f", "#44af5f", "#44af5f", "#f6a9ed", "#d2d429", "#5755fe", "#e53902", "#e53902", "#2ed7d5", "#2ed7d5", "#e53902"]);
-
-
 
     const { spriteImages, loadImages } = loadSprites();
 
@@ -268,9 +273,11 @@ const color = d3.scaleOrdinal()
     }).catch(error => {
       console.error("Error loading images:", error);
     });
+
   }).catch(error => {
     console.error("Error loading data:", error);
   });
+
 
   return canvas;
 }

@@ -58,7 +58,7 @@ chart()
 ))
 }});
 
-define({id: "b7939e0b", inputs: ["d3","FileAttachment"], outputs: ["setupCanvas","loadData","createScales","loadSprites","renderChart","drawAxes","drawLegend","chart"], body: (d3,FileAttachment) => {
+define({id: "c413aa0c", inputs: ["d3","FileAttachment"], outputs: ["setupCanvas","loadData","createScales","loadSprites","renderChart","drawAxes","drawLegend","chart"], body: (d3,FileAttachment) => {
 // Prevent default page zoom on Ctrl + scroll and pinch gestures
 document.addEventListener('wheel', function(event) {
   if (event.ctrlKey) {
@@ -124,6 +124,8 @@ function loadSprites() {
     "Treg": imagePath + "cd4.png",
     "endothelial.cells": imagePath + "endo.png",
     "B.memory": imagePath + "b-cell.png",
+
+    "stainImg": imagePath + "Lung5-3_image2.jpg",
   };
 
   const spriteImages = {};
@@ -161,7 +163,7 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         if (zoomFactor < spriteZoomLevel) {
             dotRadius = defaultDotRadius * (1.5 - (0.5 * (zoomFactor - 1) / (spriteZoomLevel - 1)));
         } else {
-            dotRadius = defaultDotRadius; // At spriteZoomLevel or beyond, use default size
+            dotRadius = defaultDotRadius; // for images, use default size
         }
 
         // Calculate image radius for sprites
@@ -183,6 +185,8 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
                 context.fill();
             });
         }
+
+        context.drawImage(spriteImages["Lung5-3_image2.jpg"], 0, 0);
 
         context.restore();
 
@@ -236,9 +240,6 @@ function drawLegend(context, color, width, marginTop, marginRight) {
     });
 }
 
-
-
-
 function chart() {
   // Configurable parameters
   const defaultDotRadius = 0.8;
@@ -268,12 +269,9 @@ function chart() {
 
     const { x, y } = createScales(data, width, height);
 
-
-const color = d3.scaleOrdinal()
+    const color = d3.scaleOrdinal()
     .domain(["B.memory", "B.naive", "Cancer", "endothelial.cells", "fibroblasts", "macrophages", "mast", "mDCs", "monocytes.C", "monocytes.NC.I", "neutrophils", "NK", "pDCs", "plasma", "T.CD4.memory", "T.CD4.naive", "T.CD8.memory", "T.CD8.naive", "Treg"])
     .range(["#5755fe", "#5755fe", "#dbb295", "#6a7a8a", "#181818", "#44af5f", "#fbad27", "#d2d429", "#44af5f", "#44af5f", "#44af5f", "#f6a9ed", "#d2d429", "#5755fe", "#e53902", "#e53902", "#2ed7d5", "#2ed7d5", "#e53902"]);
-
-
 
     const { spriteImages, loadImages } = loadSprites();
 
@@ -282,9 +280,11 @@ const color = d3.scaleOrdinal()
     }).catch(error => {
       console.error("Error loading images:", error);
     });
+
   }).catch(error => {
     console.error("Error loading data:", error);
   });
+
 
   return canvas;
 }
@@ -334,9 +334,9 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
 }
 </style>
 <div><span id="cell-b5d45f95"><span class="observablehq-loading"></span></span></div>
-<div id="cell-b7939e0b" class="observablehq observablehq--block"></div>
+<div id="cell-c413aa0c" class="observablehq observablehq--block"></div>
 </main>
 <footer id="observablehq-footer">
-<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2024-12-09T19:31:34">Dec 9, 2024</a>.</div>
+<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2025-01-09T12:25:12">Jan 9, 2025</a>.</div>
 </footer>
 </div>
