@@ -133,7 +133,7 @@ function loadSprites() {
   return { spriteImages, loadImages };
 }
 
-function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight) {
+function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight, viewRadius) {
     const spriteZoomLevel = 8; // Define the zoom level at which sprites replace dots
 
     function render(transform) {
@@ -173,10 +173,16 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         }
         context.restore();
 
+        // Draw the inner circle using a clipping mask
         context.save();
+        context.beginPath();
+        context.arc(width/2, height/2, viewRadius, 0, Math.PI * 2);
+        context.clip();
+
+        //draw the stain
         context.translate(transform.x, transform.y);
         context.scale(transform.k, transform.k);
-        context.globalAlpha = 0.4;
+        context.globalAlpha = 1.0;
         context.drawImage(spriteImages["stainImg"], 0, 0, );
         context.restore();
 
@@ -250,6 +256,7 @@ function chart() {
   const marginRight = 150;
   const marginBottom = 30;
   const marginLeft = 40;
+  const viewRadius = 200;
 
   const canvas = setupCanvas(width, height);
   const context = canvas.getContext("2d");
@@ -269,7 +276,7 @@ function chart() {
     const { spriteImages, loadImages } = loadSprites();
 
     Promise.all(loadImages).then(() => {
-      renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight);
+      renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight, viewRadius);
     }).catch(error => {
       console.error("Error loading images:", error);
     });
