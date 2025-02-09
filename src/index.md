@@ -141,6 +141,21 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         context.save();
         context.translate(transform.x, transform.y);
         context.scale(transform.k, transform.k);
+        context.globalAlpha = 1.0;
+
+        context.drawImage(spriteImages["stainImg"], 0, 0, width, height);
+        context.restore();
+
+        // Draw the inner circle using a clipping mask
+        context.save();
+        context.beginPath();
+        context.arc(width/2, height/2, viewRadius, 0, Math.PI * 2);
+        context.clip();
+
+        //draw sprites
+        context.translate(transform.x, transform.y);
+        context.scale(transform.k, transform.k);
+
 
         const zoomFactor = transform.k; // Current zoom level
 
@@ -171,19 +186,6 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
                 context.fill();
             });
         }
-        context.restore();
-
-        // Draw the inner circle using a clipping mask
-        context.save();
-        context.beginPath();
-        context.arc(width/2, height/2, viewRadius, 0, Math.PI * 2);
-        context.clip();
-
-        //draw the stain
-        context.translate(transform.x, transform.y);
-        context.scale(transform.k, transform.k);
-        context.globalAlpha = 1.0;
-        context.drawImage(spriteImages["stainImg"], 0, 0, );
         context.restore();
 
         context.save();
