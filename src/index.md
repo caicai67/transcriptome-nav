@@ -141,9 +141,9 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         context.save();
         context.translate(transform.x, transform.y);
         context.scale(transform.k, transform.k);
-        context.globalAlpha = 1.0;
+        context.globalAlpha = 0.5;
 
-        context.drawImage(spriteImages["stainImg"], 0, 0, width, height);
+        context.drawImage(spriteImages["stainImg"], 0, 0, width+360, height);
         context.restore();
 
         // Draw the inner circle using a clipping mask
