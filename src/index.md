@@ -173,7 +173,7 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         // Render points or sprites based on zoom level
         if (zoomFactor >= spriteZoomLevel) {
             data.forEach(d => {
-                const img = spriteImages[d["immune_cell_labels"]];
+                const img = spriteImages[d["immune_cell_labels"]]; //TODO: put this string in the config on the chart and pass in to this method
                 if (img) {
                     context.drawImage(img, x(d["sdimx"]) - imageRadius, y(d["sdimy"]) - imageRadius, imageRadius * 2, imageRadius * 2);
                 }
