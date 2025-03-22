@@ -12,6 +12,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// //serve seadragon code
+// app.use('/openseadragon', express.static(path.join(__dirname, 'node_modules', 'openseadragon', 'build', 'openseadragon')));
+
 // Serve the index.html file on the root route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));

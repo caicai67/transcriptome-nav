@@ -58,7 +58,7 @@ chart()
 ))
 }});
 
-define({id: "c413aa0c", inputs: ["d3","FileAttachment"], outputs: ["setupCanvas","loadData","createScales","loadSprites","renderChart","drawAxes","drawLegend","chart"], body: (d3,FileAttachment) => {
+define({id: "979da4a6", inputs: ["d3","FileAttachment"], outputs: ["setupCanvas","loadData","createScales","loadSprites","renderChart","drawAxes","drawLegend","chart"], body: (d3,FileAttachment) => {
 // Prevent default page zoom on Ctrl + scroll and pinch gestures
 document.addEventListener('wheel', function(event) {
   if (event.ctrlKey) {
@@ -125,7 +125,7 @@ function loadSprites() {
     "endothelial.cells": imagePath + "endo.png",
     "B.memory": imagePath + "b-cell.png",
 
-    "stainImg": imagePath + "Lung5-3_image2.jpg",
+    "stainImg": imagePath + "small-Lung5-3_image2.png",
   };
 
   const spriteImages = {};
@@ -147,7 +147,7 @@ function loadSprites() {
   return { spriteImages, loadImages };
 }
 
-function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight) {
+function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight, viewRadius) {
     const spriteZoomLevel = 8; // Define the zoom level at which sprites replace dots
 
     function render(transform) {
@@ -155,6 +155,21 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         context.save();
         context.translate(transform.x, transform.y);
         context.scale(transform.k, transform.k);
+        context.globalAlpha = 0.5;
+
+        //context.drawImage(spriteImages["stainImg"], 0, 0, width+360, height);
+        context.restore();
+
+        // Draw the inner circle using a clipping mask
+        context.save();
+        context.beginPath();
+        context.arc(width/2, height/2, viewRadius, 0, Math.PI * 2);
+        context.clip();
+
+        //draw sprites
+        context.translate(transform.x, transform.y);
+        context.scale(transform.k, transform.k);
+
 
         const zoomFactor = transform.k; // Current zoom level
 
@@ -172,7 +187,7 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         // Render points or sprites based on zoom level
         if (zoomFactor >= spriteZoomLevel) {
             data.forEach(d => {
-                const img = spriteImages[d["immune_cell_labels"]];
+                const img = spriteImages[d["immune_cell_labels"]]; //TODO: put this string in the config on the chart and pass in to this method
                 if (img) {
                     context.drawImage(img, x(d["sdimx"]) - imageRadius, y(d["sdimy"]) - imageRadius, imageRadius * 2, imageRadius * 2);
                 }
@@ -185,13 +200,13 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
                 context.fill();
             });
         }
-
-        context.drawImage(spriteImages["Lung5-3_image2.jpg"], 0, 0);
-
         context.restore();
 
+        context.save();
         drawAxes(context, x, y);
         drawLegend(context, color, width, marginTop, marginRight);
+
+        context.restore();
     }
 
     render(d3.zoomIdentity);
@@ -257,6 +272,7 @@ function chart() {
   const marginRight = 150;
   const marginBottom = 30;
   const marginLeft = 40;
+  const viewRadius = 200;
 
   const canvas = setupCanvas(width, height);
   const context = canvas.getContext("2d");
@@ -276,7 +292,7 @@ function chart() {
     const { spriteImages, loadImages } = loadSprites();
 
     Promise.all(loadImages).then(() => {
-      renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight);
+      renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight, viewRadius);
     }).catch(error => {
       console.error("Error loading images:", error);
     });
@@ -333,10 +349,23 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
   opacity: 0;
 }
 </style>
-<div><span id="cell-b5d45f95"><span class="observablehq-loading"></span></span></div>
-<div id="cell-c413aa0c" class="observablehq observablehq--block"></div>
+<div id="container" style="position:relative; width:100vw; height:100vh;">
+    <div id="openseadragon-viewer" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
+    <div><span id="cell-b5d45f95"><span class="observablehq-loading"></span></span></div>
+    <!-- <canvas id="overlayCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></canvas> -->
+</div>
+<script src="https://openseadragon.github.io/openseadragon/openseadragon.min.js"></script>
+<!-- <script src="/openseadragon/openseadragon.min.js"></script> TODO: switch to this and fix server endpoint -->
+<script type="text/javascript">
+    var viewer = OpenSeadragon({
+        id: "openseadragon-viewer",
+        prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+        tileSources: "Lung5-3_image2.dzi"
+    });
+</script>
+<div id="cell-979da4a6" class="observablehq observablehq--block"></div>
 </main>
 <footer id="observablehq-footer">
-<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2025-01-09T12:25:12">Jan 9, 2025</a>.</div>
+<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2025-03-22T17:24:00">Mar 22, 2025</a>.</div>
 </footer>
 </div>

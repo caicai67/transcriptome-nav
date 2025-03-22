@@ -42,7 +42,21 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
 }
 </style>
 
-<div>${chart()}</div>
+<div id="container" style="position:relative; width:100vw; height:100vh;">
+    <div id="openseadragon-viewer" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
+    <div>${chart()}</div>
+    <!-- <canvas id="overlayCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></canvas> -->
+</div>
+
+<script src="https://openseadragon.github.io/openseadragon/openseadragon.min.js"></script>
+<!-- <script src="/openseadragon/openseadragon.min.js"></script> TODO: switch to this and fix server endpoint -->
+<script type="text/javascript">
+    var viewer = OpenSeadragon({
+        id: "openseadragon-viewer",
+        prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+        tileSources: "http://localhost:3000/Lung5-3_image2.dzi"
+    });
+</script>
 
 ```js
 // Prevent default page zoom on Ctrl + scroll and pinch gestures
@@ -143,7 +157,7 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         context.scale(transform.k, transform.k);
         context.globalAlpha = 0.5;
 
-        context.drawImage(spriteImages["stainImg"], 0, 0, width+360, height);
+        //context.drawImage(spriteImages["stainImg"], 0, 0, width+360, height);
         context.restore();
 
         // Draw the inner circle using a clipping mask
