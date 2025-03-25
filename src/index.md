@@ -44,7 +44,7 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
 
 <div id="container" style="position:relative; width:100vw; height:100vh;">
     <div id="openseadragon-viewer" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
-    <div>${chart()}</div>
+    <div style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;">${chart()}</div>
     <!-- <canvas id="overlayCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></canvas> -->
 </div>
 
@@ -54,7 +54,8 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
     var viewer = OpenSeadragon({
         id: "openseadragon-viewer",
         prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-        tileSources: "http://localhost:3000/Lung5-3_image2.dzi"
+        tileSources: "http://localhost:3000/Lung5-3_image2.dzi",
+        crossOriginPolicy: "Anonymous", // Allow cross-origin image loading
     });
 </script>
 

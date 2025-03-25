@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import cors from 'cors';
 import { fileURLToPath } from 'url';
 
 // Create an Express application
@@ -8,6 +9,12 @@ const port = 3000;
 
 // Get the directory name of the current module
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const corsOptions = {
+  origin: 'http://127.0.0.1:3000',
+};
+
+app.use(cors(corsOptions));
 
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
