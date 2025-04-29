@@ -44,7 +44,7 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
 
 <div id="container" style="position:relative; width:100vw; height:100vh;">
     <div id="openseadragon-viewer" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
-    <div style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;">${chart()}</div>
+    <div id="d3chart" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;">${chart()}</div>
     <!-- <canvas id="overlayCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></canvas> -->
 </div>
 
@@ -57,9 +57,15 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
         tileSources: "http://localhost:3000/Lung5-3_image2.dzi",
         crossOriginPolicy: "Anonymous", // Allow cross-origin image loading
     });
+
+
 </script>
 
 ```js
+
+
+
+
 // Prevent default page zoom on Ctrl + scroll and pinch gestures
 document.addEventListener('wheel', function(event) {
   if (event.ctrlKey) {
@@ -148,18 +154,23 @@ function loadSprites() {
   return { spriteImages, loadImages };
 }
 
-function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight, viewRadius) {
+function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight, viewRadius, d3Zoom, chartCanvas) {
     const spriteZoomLevel = 8; // Define the zoom level at which sprites replace dots
 
+    console.log("renderChart called");
+
     function render(transform) {
+        console.log("render called");
+        console.log("transform: " + transform);
+        console.log("transform.k: " + transform.k);
         context.clearRect(0, 0, width, height);
         context.save();
         context.translate(transform.x, transform.y);
         context.scale(transform.k, transform.k);
-        context.globalAlpha = 0.5;
+        context.globalAlpha = 0.8;
 
         //context.drawImage(spriteImages["stainImg"], 0, 0, width+360, height);
-        context.restore();
+        //context.restore();
 
         // Draw the inner circle using a clipping mask
         context.save();
@@ -168,8 +179,9 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         context.clip();
 
         //draw sprites
-        context.translate(transform.x, transform.y);
-        context.scale(transform.k, transform.k);
+         context.translate(transform.x, transform.y);
+         context.scale(transform.k, transform.k);
+         console.log("scale: " + context.scale);
 
 
         const zoomFactor = transform.k; // Current zoom level
@@ -177,10 +189,12 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         // Calculate the dot radius based on zoom level
         let dotRadius;
         if (zoomFactor < spriteZoomLevel) {
-            dotRadius = defaultDotRadius * (1.5 - (0.5 * (zoomFactor - 1) / (spriteZoomLevel - 1)));
+            dotRadius = defaultDotRadius //* (1.5 - (0.5 * (zoomFactor - 1) / (spriteZoomLevel - 1)));
         } else {
             dotRadius = defaultDotRadius; // for images, use default size
         }
+
+        //console.log("dotRadius: " + dotRadius);
 
         // Calculate image radius for sprites
         const imageRadius = defaultImageRadius + (imageScale * (zoomFactor - spriteZoomLevel) / (maxZoom - spriteZoomLevel));
@@ -210,16 +224,43 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         context.restore();
     }
 
+    //console.log("d3.zoomIdentity: " + d3.zoomIdentity);
     render(d3.zoomIdentity);
 
-    d3.select(context.canvas)
-        .call(d3.zoom()
-            .scaleExtent([1, maxZoom])
-            .translateExtent([[0, 0], [width, height]])
-            .extent([[0, 0], [width, height]])
-            .on("zoom", event => render(event.transform))
-        );
-}
+    // d3.select(context.canvas)
+    //     .call(d3.zoom()
+    //         .scaleExtent([1, maxZoom])
+    //         .translateExtent([[0, 0], [width, height]])
+    //         .extent([[0, 0], [width, height]])
+    //         .on("zoom", event => render(event.transform))
+    //     );
+
+    // Function to sync D3 chart with OpenSeadragon
+    function syncChartWithViewer() {
+      console.log("syncChartWithViewer called");
+        var bounds = viewer.viewport.getBounds();
+        var zoom = viewer.viewport.getZoom(true);
+
+        // Convert OpenSeadragon viewport to D3 coordinates
+        var scale = zoom;  
+        var translateX = -bounds.x * width; 
+        var translateY = -bounds.y * height;
+
+        var transform = d3.zoomIdentity.translate(translateX, translateY).scale(scale);
+
+        // Apply the computed transformation to the D3 chart
+        chartCanvas.call(d3Zoom.transform, transform);
+
+        //console.log("transform: " + transform);
+        // Re-render chart with new transform
+        render(transform);
+    }
+
+    // Attach OpenSeadragon event listeners to trigger sync
+    viewer.addHandler("animation", syncChartWithViewer);
+    viewer.addHandler("zoom", syncChartWithViewer);
+    viewer.addHandler("pan", syncChartWithViewer);
+    }
 
 function drawAxes(context, x, y) {
   // Axes drawing logic should be implemented here.
@@ -278,6 +319,15 @@ function chart() {
   const canvas = setupCanvas(width, height);
   const context = canvas.getContext("2d");
 
+  var chartCanvas = d3.select(context.canvas);
+  var d3Zoom = d3.zoom()
+      .scaleExtent([1, maxZoom])
+      .translateExtent([[0, 0], [width, height]])
+      .extent([[0, 0], [width, height]]);
+
+  // Remove default D3 zoom behavior (so OpenSeadragon controls everything)
+  chartCanvas.on(".zoom", null);
+
   loadData().then(data => {
     if (!data || data.length === 0) {
       console.error("Data not loaded correctly or empty.");
@@ -293,7 +343,7 @@ function chart() {
     const { spriteImages, loadImages } = loadSprites();
 
     Promise.all(loadImages).then(() => {
-      renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight, viewRadius);
+      renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight, viewRadius, d3Zoom, chartCanvas);
     }).catch(error => {
       console.error("Error loading images:", error);
     });
