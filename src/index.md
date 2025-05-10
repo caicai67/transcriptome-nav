@@ -148,9 +148,9 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
 
         // Draw the inner circle using a clipping mask
         context.save();
-        context.beginPath();
-        context.arc(width/2, height/2, viewRadius, 0, Math.PI * 2);
-        context.clip();
+        // context.beginPath();
+        // context.arc(width/2, height/2, viewRadius, 0, Math.PI * 2);
+        // context.clip();
 
         //draw sprites
         context.translate(transform.x, transform.y);
