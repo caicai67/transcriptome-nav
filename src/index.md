@@ -154,34 +154,40 @@ function loadSprites() {
   return { spriteImages, loadImages };
 }
 
-function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight, viewRadius, d3Zoom, chartCanvas) {
+function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight, viewRadius, d3Zoom, chartCanvas, marginLeft) {
     const spriteZoomLevel = 8; // Define the zoom level at which sprites replace dots
 
-    console.log("renderChart called");
+    //console.log("renderChart called");
+    //The zoom level openseadragon starts at. Normalize the chart zoom to this
+    var baseZoom = null;
 
     function render(transform) {
         console.log("render called");
         console.log("transform: " + transform);
         console.log("transform.k: " + transform.k);
+        //console.log("width: " + width);
+        console.log("height: " + height);
         context.clearRect(0, 0, width, height);
         context.save();
-        context.translate(transform.x, transform.y);
-        context.scale(transform.k, transform.k);
-        context.globalAlpha = 0.8;
+        //context.translate(transform.x, transform.y);
+        //context.scale(transform.k, transform.k);
+        context.globalAlpha = 0.5;
 
         //context.drawImage(spriteImages["stainImg"], 0, 0, width+360, height);
         //context.restore();
 
         // Draw the inner circle using a clipping mask
-        context.save();
-        context.beginPath();
-        context.arc(width/2, height/2, viewRadius, 0, Math.PI * 2);
-        context.clip();
+        //context.save();
+        //context.beginPath();
+        //context.arc(width/2, height/2, viewRadius, 0, Math.PI * 2);
+        //context.clip();
 
         //draw sprites
-         context.translate(transform.x, transform.y);
-         context.scale(transform.k, transform.k);
+         context.translate(transform.x + marginLeft, transform.y);
+         context.scale(transform.k * .80, transform.k);
          console.log("scale: " + context.scale);
+         //console.log("transform.x: " + transform.x);
+         console.log("transform.y: " + transform.y);
 
 
         const zoomFactor = transform.k; // Current zoom level
@@ -189,7 +195,7 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         // Calculate the dot radius based on zoom level
         let dotRadius;
         if (zoomFactor < spriteZoomLevel) {
-            dotRadius = defaultDotRadius //* (1.5 - (0.5 * (zoomFactor - 1) / (spriteZoomLevel - 1)));
+            dotRadius = defaultDotRadius * (1.5 - (0.5 * (zoomFactor - 1) / (spriteZoomLevel - 1)));
         } else {
             dotRadius = defaultDotRadius; // for images, use default size
         }
@@ -217,15 +223,16 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         }
         context.restore();
 
-        context.save();
-        drawAxes(context, x, y);
-        drawLegend(context, color, width, marginTop, marginRight);
+        // context.save();
+        // drawAxes(context, x, y);
+        // drawLegend(context, color, width, marginTop, marginRight);
 
-        context.restore();
+        // context.restore();
     }
 
     //console.log("d3.zoomIdentity: " + d3.zoomIdentity);
-    render(d3.zoomIdentity);
+    //render(d3.zoomIdentity);
+    syncChartWithViewer();
 
     // d3.select(context.canvas)
     //     .call(d3.zoom()
@@ -238,20 +245,52 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
     // Function to sync D3 chart with OpenSeadragon
     function syncChartWithViewer() {
       console.log("syncChartWithViewer called");
+
+        if(baseZoom == null) {
+          baseZoom = viewer.viewport.getZoom(true);
+          console.log("Setting base zoom to: " + baseZoom);
+        }
         var bounds = viewer.viewport.getBounds();
         var zoom = viewer.viewport.getZoom(true);
+        const topLeft = viewer.viewport.pixelFromPoint(bounds.getTopLeft(), true);
+        const bottomRight = viewer.viewport.pixelFromPoint(bounds.getBottomRight(), true);
+
+        console.log("zoom: " + zoom);
+        console.log("bounds: " + bounds);
+        //console.log("bounds.x: " + bounds.x);
+        console.log("bounds.y: " + bounds.y);
+        console.log("bounds.width: " + bounds.width);
+        console.log("bounds.height: " + bounds.height);
+        console.log("topLeft: " + topLeft);
+        console.log("bottomRight: " + bottomRight);
+
+
 
         // Convert OpenSeadragon viewport to D3 coordinates
-        var scale = zoom;  
-        var translateX = -bounds.x * width; 
-        var translateY = -bounds.y * height;
+
+        var scale = zoom/baseZoom;
+
+        const tiledImage = viewer.world.getItemAt(0); // Get the first (and usually only) image
+        const imageSize = tiledImage.getContentSize(); 
+        const aspectRatio = imageSize.x / imageSize.y;
+        console.log("aspectRatio: " + aspectRatio);
+        const normalizedHeight = 1/aspectRatio;
+        var rightOfBound = 1 - bounds.x - bounds.width; //width of the area to the right of the current view
+        var translateX = (rightOfBound - bounds.x) * width /2; 
+        var belowBound = normalizedHeight - bounds.y - bounds.height; //height of the area below the current view
+        var translateY = (belowBound - bounds.y) * width /2;
+
+
+        //console.log("translateX: " + translateX);
+        console.log("translateY: " + translateY);
 
         var transform = d3.zoomIdentity.translate(translateX, translateY).scale(scale);
+
+        //console.log("transform: " + transform);
 
         // Apply the computed transformation to the D3 chart
         chartCanvas.call(d3Zoom.transform, transform);
 
-        //console.log("transform: " + transform);
         // Re-render chart with new transform
         render(transform);
     }
@@ -298,7 +337,9 @@ function drawLegend(context, color, width, marginTop, marginRight) {
 }
 
 function chart() {
-  // Configurable parameters
+
+  ///////////////////////////// Configurable parameters //////////////////////////////////
+
   const defaultDotRadius = 0.8;
   const dotScale = 0.3;
 
@@ -308,13 +349,29 @@ function chart() {
   const maxZoom = 40;
 
   // Parameters
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  const marginTop = 20;
-  const marginRight = 150;
-  const marginBottom = 30;
-  const marginLeft = 40;
+
+  const chartRatio = 27360/21888; //ratio of width/height of the image, which should be enforced on the chart
+  const marginTop = 0;
+  const marginRight = 0;
+  const marginBottom = 0;
+  const marginLeft = 22;
   const viewRadius = 200;
+
+  ////////////////////////////////// End configuration ///////////////////////////////////
+  
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+
+  const windowRatio = window.innerWidth/window.innerHeight;
+
+  if (windowRatio > chartRatio) {
+    // image/chart will have padding on the sides
+    width = Math.round(chartRatio * height);
+  } else {
+    // image/chart will have padding on the top and bottom
+    height = Math.round(width/chartRatio);
+  }
+
 
   const canvas = setupCanvas(width, height);
   const context = canvas.getContext("2d");
@@ -343,7 +400,7 @@ function chart() {
     const { spriteImages, loadImages } = loadSprites();
 
     Promise.all(loadImages).then(() => {
-      renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight, viewRadius, d3Zoom, chartCanvas);
+      renderChart(context, data, x, y, color, spriteImages, defaultDotRadius, dotScale, defaultImageRadius, imageScale, maxZoom, width, height, marginTop, marginRight, viewRadius, d3Zoom, chartCanvas, marginLeft);
     }).catch(error => {
       console.error("Error loading images:", error);
     });
