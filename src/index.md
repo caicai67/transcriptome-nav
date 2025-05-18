@@ -40,23 +40,107 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
   pointer-events: none;
   opacity: 0;
 }
+/* Make the slider visible and styled in the top-right corner */
+.slider-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: sans-serif;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+}
 </style>
 
 <div id="container" style="position:relative; width:100vw; height:100vh;">
     <div id="openseadragon-viewer" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
-    <div id="d3chart" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;">${chart()}</div>
+     <div class="slider-container">
+        <label>Overlay Opacity:
+          <input id="opacitySlider" type="range" min="0" max="100" value="50" />
+        </label>
+      </div>
+        <!-- <div id="d3chart" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;">${chart()}</div> -->
     <!-- <canvas id="overlayCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></canvas> -->
 </div>
 
 <script src="https://openseadragon.github.io/openseadragon/openseadragon.min.js"></script>
 <!-- <script src="/openseadragon/openseadragon.min.js"></script> TODO: switch to this and fix server endpoint -->
 <script type="text/javascript">
-    var viewer = OpenSeadragon({
-        id: "openseadragon-viewer",
-        prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-        tileSources: "http://localhost:3000/Lung5-3_image2.dzi",
-        crossOriginPolicy: "Anonymous", // Allow cross-origin image loading
+  const viewer = OpenSeadragon({
+      id: "openseadragon-viewer",
+      prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+      tileSources: "http://localhost:3000/Lung5-3_image2.dzi",
+      crossOriginPolicy: "Anonymous", // Allow cross-origin image loading
+  });
+
+  let overlayB, overlayC;
+  let zoomThreshold = 3.5;
+  let currentOpacity = 0.5;
+
+  viewer.addHandler("open", function () {
+    // Add overlay B
+    viewer.addTiledImage({
+      tileSource: "https://openseadragon.github.io/example-images/duomo/duomo.dzi", // Image B
+      opacity: currentOpacity,
+      success: function (event) {
+        console.log("successfully added overlayB")
+        overlayB = event.item;
+      }
     });
+
+    console.log("midpoint");
+
+    // Add overlay C (initially hidden)
+    viewer.addTiledImage({
+      tileSource: "https://openseadragon.github.io/example-images/highsmith/highsmith.dzi", // Image C
+      opacity: currentOpacity,
+      success: function (event) {
+        console.log("successfully added overlayC")
+        overlayC = event.item;
+        overlayC.setOpacity(0);
+      }
+    });
+  });
+
+  // Track zoom to toggle visibility
+  viewer.addHandler("zoom", function () {
+    console.log("calling zoom function");
+    if (!overlayB || !overlayC) return;
+
+    const zoom = viewer.viewport.getZoom();
+
+    console.log("zoom: " + zoom);
+    const showC = showZoomImage();
+
+    // Sync current overlay opacity
+    if (showC) {
+      overlayC.setOpacity(currentOpacity);
+      overlayB.setOpacity(0);
+    } else {
+      overlayB.setOpacity(currentOpacity);
+      overlayC.setOpacity(0);
+    }
+  });
+
+  // Slider controls current visible overlay
+  document.getElementById("opacitySlider").addEventListener("input", function () {
+    currentOpacity = this.value / 100;
+
+    if (overlayB && !showZoomImage()) {
+      overlayB.setOpacity(currentOpacity);
+    }
+    if (overlayC && showZoomImage()) {
+      overlayC.setOpacity(currentOpacity);
+    }
+  });
+
+  function showZoomImage() {
+
+    const zoom = viewer.viewport.getZoom();
+    return zoom >= zoomThreshold;
+  }
 
 
 </script>
