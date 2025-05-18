@@ -272,6 +272,13 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
 
         const tiledImage = viewer.world.getItemAt(0); // Get the first (and usually only) image
         const imageSize = tiledImage.getContentSize(); 
+
+        //calculate relative image translation
+        const imageBounds = tiledImage.getBounds();
+        const topLeftImagePixel = viewer.viewport.viewportToViewerElementCoordinates(imageBounds.getTopLeft());
+        const bottomRightImagePixel = viewer.viewport.viewportToViewerElementCoordinates(imageBounds.getBottomRight());
+
+        //calculate zoom and pan
         const aspectRatio = imageSize.x / imageSize.y;
         console.log("aspectRatio: " + aspectRatio);
         const normalizedHeight = 1/aspectRatio;
@@ -279,6 +286,9 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         var translateX = (rightOfBound - bounds.x) * width /2; 
         var belowBound = normalizedHeight - bounds.y - bounds.height; //height of the area below the current view
         var translateY = (belowBound - bounds.y) * width /2;
+
+        //translateX += topLeftImagePixel.x;
+        //translateY += topLeftImagePixel.y;
 
 
         //console.log("translateX: " + translateX);
@@ -289,7 +299,7 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         //console.log("transform: " + transform);
 
         // Apply the computed transformation to the D3 chart
-        chartCanvas.call(d3Zoom.transform, transform);
+        //chartCanvas.call(d3Zoom.transform, transform);
 
         // Re-render chart with new transform
         render(transform);
@@ -354,7 +364,7 @@ function chart() {
   const marginTop = 0;
   const marginRight = 0;
   const marginBottom = 0;
-  const marginLeft = 22;
+  const marginLeft = 0;
   const viewRadius = 200;
 
   ////////////////////////////////// End configuration ///////////////////////////////////
