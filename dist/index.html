@@ -58,7 +58,7 @@ chart()
 ))
 }});
 
-define({id: "f161c531", inputs: ["d3","FileAttachment"], outputs: ["setupCanvas","loadData","createScales","loadSprites","renderChart","drawAxes","drawLegend","chart"], body: (d3,FileAttachment) => {
+define({id: "2c1446c0", inputs: ["d3","FileAttachment"], outputs: ["setupCanvas","loadData","createScales","loadSprites","renderChart","drawAxes","drawLegend","chart"], body: (d3,FileAttachment) => {
 // Prevent default page zoom on Ctrl + scroll and pinch gestures
 document.addEventListener('wheel', function(event) {
   if (event.ctrlKey) {
@@ -155,7 +155,7 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         context.save();
         context.translate(transform.x, transform.y);
         context.scale(transform.k, transform.k);
-        context.globalAlpha = 0.5;
+        //context.globalAlpha = 0.5;
 
         context.drawImage(spriteImages["stainImg"], 0, 0, width+360, height);
         context.restore();
@@ -350,9 +350,9 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
 }
 </style>
 <div><span id="cell-b5d45f95"><span class="observablehq-loading"></span></span></div>
-<div id="cell-f161c531" class="observablehq observablehq--block"></div>
+<div id="cell-2c1446c0" class="observablehq observablehq--block"></div>
 </main>
 <footer id="observablehq-footer">
-<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2025-05-10T14:42:12">May 10, 2025</a>.</div>
+<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2025-06-03T20:06:57">Jun 3, 2025</a>.</div>
 </footer>
 </div>

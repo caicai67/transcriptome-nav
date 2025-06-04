@@ -141,7 +141,7 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         context.save();
         context.translate(transform.x, transform.y);
         context.scale(transform.k, transform.k);
-        context.globalAlpha = 0.5;
+        //context.globalAlpha = 0.5;
 
         context.drawImage(spriteImages["stainImg"], 0, 0, width+360, height);
         context.restore();
