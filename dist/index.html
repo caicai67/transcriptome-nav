@@ -58,7 +58,7 @@ chart()
 ))
 }});
 
-define({id: "fc8edfae", inputs: ["d3","FileAttachment","viewer"], outputs: ["setupCanvas","loadData","createScales","loadSprites","renderChart","drawAxes","drawLegend","chart"], body: (d3,FileAttachment,viewer) => {
+define({id: "c50ae847", inputs: ["d3","FileAttachment","viewer"], outputs: ["setupCanvas","loadData","createScales","loadSprites","renderChart","drawAxes","drawLegend","chart"], body: (d3,FileAttachment,viewer) => {
 
 
 
@@ -268,6 +268,13 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
 
         const tiledImage = viewer.world.getItemAt(0); // Get the first (and usually only) image
         const imageSize = tiledImage.getContentSize(); 
+
+        //calculate relative image translation
+        const imageBounds = tiledImage.getBounds();
+        const topLeftImagePixel = viewer.viewport.viewportToViewerElementCoordinates(imageBounds.getTopLeft());
+        const bottomRightImagePixel = viewer.viewport.viewportToViewerElementCoordinates(imageBounds.getBottomRight());
+
+        //calculate zoom and pan
         const aspectRatio = imageSize.x / imageSize.y;
         console.log("aspectRatio: " + aspectRatio);
         const normalizedHeight = 1/aspectRatio;
@@ -275,6 +282,9 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         var translateX = (rightOfBound - bounds.x) * width /2; 
         var belowBound = normalizedHeight - bounds.y - bounds.height; //height of the area below the current view
         var translateY = (belowBound - bounds.y) * width /2;
+
+        //translateX += topLeftImagePixel.x;
+        //translateY += topLeftImagePixel.y;
 
 
         //console.log("translateX: " + translateX);
@@ -285,7 +295,7 @@ function renderChart(context, data, x, y, color, spriteImages, defaultDotRadius,
         //console.log("transform: " + transform);
 
         // Apply the computed transformation to the D3 chart
-        chartCanvas.call(d3Zoom.transform, transform);
+        //chartCanvas.call(d3Zoom.transform, transform);
 
         // Re-render chart with new transform
         render(transform);
@@ -350,7 +360,7 @@ function chart() {
   const marginTop = 0;
   const marginRight = 0;
   const marginBottom = 0;
-  const marginLeft = 22;
+  const marginLeft = 0;
   const viewRadius = 200;
 
   ////////////////////////////////// End configuration ///////////////////////////////////
@@ -452,27 +462,111 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
   pointer-events: none;
   opacity: 0;
 }
+/* Make the slider visible and styled in the top-right corner */
+.slider-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: sans-serif;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+}
 </style>
 <div id="container" style="position:relative; width:100vw; height:100vh;">
     <div id="openseadragon-viewer" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
-    <div id="d3chart" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"><span id="cell-b5d45f95"><span class="observablehq-loading"></span></span></div>
+     <div class="slider-container">
+        <label>Overlay Opacity:
+          <input id="opacitySlider" type="range" min="0" max="100" value="50">
+        </label>
+      </div>
+        <!-- <div id="d3chart" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"><span id="cell-b5d45f95"><span class="observablehq-loading"></span></span></div> -->
     <!-- <canvas id="overlayCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></canvas> -->
 </div>
 <script src="https://openseadragon.github.io/openseadragon/openseadragon.min.js"></script>
 <!-- <script src="/openseadragon/openseadragon.min.js"></script> TODO: switch to this and fix server endpoint -->
 <script type="text/javascript">
-    var viewer = OpenSeadragon({
-        id: "openseadragon-viewer",
-        prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-        tileSources: "http://localhost:3000/Lung5-3_image2.dzi",
-        crossOriginPolicy: "Anonymous", // Allow cross-origin image loading
+  const viewer = OpenSeadragon({
+      id: "openseadragon-viewer",
+      prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+      tileSources: "http://localhost:3000/Lung5-3_image2.dzi",
+      crossOriginPolicy: "Anonymous", // Allow cross-origin image loading
+  });
+
+  let overlayB, overlayC;
+  let zoomThreshold = 3.5;
+  let currentOpacity = 0.5;
+
+  viewer.addHandler("open", function () {
+    // Add overlay B
+    viewer.addTiledImage({
+      tileSource: "https://openseadragon.github.io/example-images/duomo/duomo.dzi", // Image B
+      opacity: currentOpacity,
+      success: function (event) {
+        console.log("successfully added overlayB")
+        overlayB = event.item;
+      }
     });
+
+    console.log("midpoint");
+
+    // Add overlay C (initially hidden)
+    viewer.addTiledImage({
+      tileSource: "https://openseadragon.github.io/example-images/highsmith/highsmith.dzi", // Image C
+      opacity: currentOpacity,
+      success: function (event) {
+        console.log("successfully added overlayC")
+        overlayC = event.item;
+        overlayC.setOpacity(0);
+      }
+    });
+  });
+
+  // Track zoom to toggle visibility
+  viewer.addHandler("zoom", function () {
+    console.log("calling zoom function");
+    if (!overlayB || !overlayC) return;
+
+    const zoom = viewer.viewport.getZoom();
+
+    console.log("zoom: " + zoom);
+    const showC = showZoomImage();
+
+    // Sync current overlay opacity
+    if (showC) {
+      overlayC.setOpacity(currentOpacity);
+      overlayB.setOpacity(0);
+    } else {
+      overlayB.setOpacity(currentOpacity);
+      overlayC.setOpacity(0);
+    }
+  });
+
+  // Slider controls current visible overlay
+  document.getElementById("opacitySlider").addEventListener("input", function () {
+    currentOpacity = this.value / 100;
+
+    if (overlayB && !showZoomImage()) {
+      overlayB.setOpacity(currentOpacity);
+    }
+    if (overlayC && showZoomImage()) {
+      overlayC.setOpacity(currentOpacity);
+    }
+  });
+
+  function showZoomImage() {
+
+    const zoom = viewer.viewport.getZoom();
+    return zoom >= zoomThreshold;
+  }
 
 
 </script>
-<div id="cell-fc8edfae" class="observablehq observablehq--block"></div>
+<div id="cell-c50ae847" class="observablehq observablehq--block"></div>
 </main>
 <footer id="observablehq-footer">
-<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2025-05-11T19:45:13">May 11, 2025</a>.</div>
+<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2025-07-05T16:04:03">Jul 5, 2025</a>.</div>
 </footer>
 </div>

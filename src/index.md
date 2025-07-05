@@ -82,15 +82,13 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
   viewer.addHandler("open", function () {
     // Add overlay B
     viewer.addTiledImage({
-      tileSource: "https://openseadragon.github.io/example-images/duomo/duomo.dzi", // Image B
+      tileSource: "http://localhost:3000/output_dzi.dzi", // Image B
       opacity: currentOpacity,
       success: function (event) {
         console.log("successfully added overlayB")
         overlayB = event.item;
       }
     });
-
-    console.log("midpoint");
 
     // Add overlay C (initially hidden)
     viewer.addTiledImage({
