@@ -84,6 +84,8 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
     viewer.addTiledImage({
       tileSource: "http://localhost:3000/output_dzi.dzi", // Image B
       opacity: currentOpacity,
+      x: -0.0003,
+      y: -0.0003,
       success: function (event) {
         console.log("successfully added overlayB")
         overlayB = event.item;
@@ -92,8 +94,10 @@ https://nanostring.com/products/cosmx-spatial-molecular-imager/ffpe-dataset/nscl
 
     // Add overlay C (initially hidden)
     viewer.addTiledImage({
-      tileSource: "https://openseadragon.github.io/example-images/highsmith/highsmith.dzi", // Image C
+      tileSource: "http://localhost:3000/icons_dzi.dzi", // Image C
       opacity: currentOpacity,
+      x: -0.0013,
+      y: -0.0012,
       success: function (event) {
         console.log("successfully added overlayC")
         overlayC = event.item;
